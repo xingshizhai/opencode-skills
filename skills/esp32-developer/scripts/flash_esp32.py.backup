@@ -1,0 +1,200 @@
+#!/usr/bin/env python3
+"""
+Flash ESP32 firmware to a development board.
+
+Usage:
+    flash_esp32.py [--port SERIAL_PORT] [--baud BAUD_RATE] [--path PROJECT_PATH] [--monitor] [--setup]
+
+Examples:
+    flash_esp32.py
+    flash_esp32.py --port /dev/ttyUSB0 --baud 460800
+    flash_esp32.py --port COM3 --baud 115200 --monitor
+    flash_esp32.py --setup  # Run setup wizard first
+"""
+
+import os
+import sys
+import subprocess
+import argparse
+import glob
+
+# Add config manager to path
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import config_manager
+
+def check_esp_idf(setup_if_needed=True):
+    """Check if ESP-IDF environment is set up."""
+    # Try to get configured IDF_PATH
+    idf_path = config_manager.get_configured_idf_path()
+    
+    if not idf_path and setup_if_needed:
+        print("ESP-IDF is not configured.")
+        response = input("Would you like to run the setup wizard now? [Y/n]: ").strip().lower()
+        if response in ['', 'y', 'yes']:
+            config = config_manager.interactive_setup()
+            if config:
+                idf_path = config.get('idf_path')
+            else:
+                print("Setup cancelled.")
+                return False
+        else:
+            print("Please configure ESP-IDF first.")
+            print("Run: python scripts/config_manager.py --setup")
+            return False
+    
+    if not idf_path:
+        print("ERROR: ESP-IDF is not configured.")
+        print("Please run: python scripts/config_manager.py --setup")
+        return False
+    
+    if not os.path.exists(idf_path):
+        print(f"ERROR: IDF_PATH directory does not exist: {idf_path}")
+        print("Please reconfigure ESP-IDF: python scripts/config_manager.py --setup")
+        return False
+    
+    # Check if idf.py is in PATH
+    try:
+        # Set IDF_PATH for child processes
+        os.environ['IDF_PATH'] = idf_path
+        subprocess.run(['idf.py', '--version'], capture_output=True, check=True)
+        return True
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        print("ERROR: idf.py command not found.")
+        print("Please make sure ESP-IDF environment is properly sourced.")
+        print(f"IDF_PATH is set to: {idf_path}")
+        print("Try running: source $IDF_PATH/export.sh")
+        return False
+
+def detect_serial_port():
+    """Try to detect ESP32 serial port."""
+    # Common serial ports on Linux
+    possible_ports = [
+        "/dev/ttyUSB0", "/dev/ttyUSB1", "/dev/ttyUSB2", "/dev/ttyUSB3",
+        "/dev/ttyACM0", "/dev/ttyACM1", "/dev/ttyACM2", "/dev/ttyACM3",
+        "/dev/ttyS0", "/dev/ttyS1", "/dev/ttyS2", "/dev/ttyS3"
+    ]
+    
+    # Check each port
+    for port in possible_ports:
+        if os.path.exists(port):
+            print(f"  Detected possible serial port: {port}")
+            return port
+    
+    # Try to find via glob pattern
+    usb_ports = glob.glob("/dev/ttyUSB*") + glob.glob("/dev/ttyACM*")
+    if usb_ports:
+        print(f"  Detected possible serial port: {usb_ports[0]}")
+        return usb_ports[0]
+    
+    return None
+
+def flash_project(project_path, port, baud, monitor, setup_if_needed=True):
+    """Flash the ESP32 project."""
+    # Load configuration for default port
+    config = config_manager.load_config()
+    
+    # Use default port from config if not specified
+    if not port and config.get('default_port'):
+        port = config['default_port']
+        print(f"Using default port from config: {port}")
+    
+    # Determine project directory
+    if not project_path:
+        project_path = os.getcwd()
+    
+    if not os.path.exists(project_path):
+        print(f"ERROR: Project path does not exist: {project_path}")
+        return False
+    
+    # Check if it's an ESP-IDF project
+    build_dir = os.path.join(project_path, "build")
+    if not os.path.exists(build_dir):
+        print(f"ERROR: Project not built. Build the project first: idf.py build")
+        return False
+    
+    # Detect port if not specified
+    if not port:
+        port = detect_serial_port()
+        if not port:
+            print("ERROR: Could not detect serial port automatically.")
+            print("Please specify port manually with --port option.")
+            print("Common ports: /dev/ttyUSB0 (Linux), COM3 (Windows), /dev/cu.usbserial-* (macOS)")
+            return False
+    
+    print(f"Flashing ESP32 project at {project_path}")
+    print(f"  Port: {port}")
+    print(f"  Baud rate: {baud}")
+    
+    # Change to project directory
+    original_dir = os.getcwd()
+    os.chdir(project_path)
+    
+    try:
+        
+        # Build flash command
+        cmd = ['idf.py', '-p', port, '-b', str(baud), 'flash']
+        
+        if monitor:
+            cmd.append('monitor')
+            print("  Starting monitor after flash...")
+        
+        # Execute flash command
+        print("  Flashing... (press BOOT button if flashing doesn't start)")
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        
+        if result.returncode == 0:
+            print("\n✅ Flash successful!")
+            if monitor:
+                print("  Monitor is running. Press Ctrl+] to exit monitor.")
+            else:
+                print("\nTo start serial monitor:")
+                print(f"  idf.py -p {port} monitor")
+            return True
+        else:
+            print(f"\n❌ Flash failed!")
+            print(f"Error output:\n{result.stderr}")
+            
+            # Common troubleshooting tips
+            print("\nTroubleshooting tips:")
+            print("  1. Make sure the board is connected and powered")
+            print("  2. Check if the correct serial port is selected")
+            print("  3. Press BOOT button while flashing if auto-reset fails")
+            print("  4. Check cable connection")
+            print("  5. Verify board drivers are installed")
+            
+            return False
+            
+    except Exception as e:
+        print(f"ERROR: Flash failed with exception: {e}")
+        return False
+    finally:
+        os.chdir(original_dir)
+
+def main():
+    parser = argparse.ArgumentParser(description="Flash ESP32 firmware to a development board")
+    parser.add_argument("--port", help="Serial port (e.g., /dev/ttyUSB0, COM3). If not specified, uses default from config or auto-detects.")
+    parser.add_argument("--baud", type=int, default=460800, help="Baud rate (default: 460800)")
+    parser.add_argument("--path", help="Path to project directory (default: current directory)")
+    parser.add_argument("--monitor", action="store_true", help="Start serial monitor after flashing")
+    parser.add_argument("--setup", action="store_true", help="Run setup wizard before flashing")
+    
+    args = parser.parse_args()
+    
+    # Run setup wizard if requested
+    setup_if_needed = True
+    if args.setup:
+        config = config_manager.interactive_setup()
+        if not config:
+            print("Setup cancelled.")
+            sys.exit(1)
+        setup_if_needed = False  # Already setup
+    
+    # Check ESP-IDF environment
+    if not check_esp_idf(setup_if_needed):
+        sys.exit(1)
+    
+    success = flash_project(args.path, args.port, args.baud, args.monitor, setup_if_needed)
+    sys.exit(0 if success else 1)
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,177 @@
+#!/usr/bin/env python3
+"""
+Build an ESP32 project using ESP-IDF.
+
+Usage:
+    build_esp32_project.py [--path PROJECT_PATH] [--target TARGET] [--clean] [--setup]
+
+Examples:
+    build_esp32_project.py
+    build_esp32_project.py --path /home/user/my_project --target esp32s3
+    build_esp32_project.py --clean
+    build_esp32_project.py --setup  # Run setup wizard first
+"""
+
+import os
+import sys
+import subprocess
+import argparse
+
+# Add config manager to path
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import config_manager
+
+def check_esp_idf(setup_if_needed=True):
+    """Check if ESP-IDF environment is set up."""
+    # Try to get configured IDF_PATH
+    idf_path = config_manager.get_configured_idf_path()
+    
+    if not idf_path and setup_if_needed:
+        print("ESP-IDF is not configured.")
+        response = input("Would you like to run the setup wizard now? [Y/n]: ").strip().lower()
+        if response in ['', 'y', 'yes']:
+            config = config_manager.interactive_setup()
+            if config:
+                idf_path = config.get('idf_path')
+            else:
+                print("Setup cancelled.")
+                return False
+        else:
+            print("Please configure ESP-IDF first.")
+            print("Run: python scripts/config_manager.py --setup")
+            return False
+    
+    if not idf_path:
+        print("ERROR: ESP-IDF is not configured.")
+        print("Please run: python scripts/config_manager.py --setup")
+        return False
+    
+    if not os.path.exists(idf_path):
+        print(f"ERROR: IDF_PATH directory does not exist: {idf_path}")
+        print("Please reconfigure ESP-IDF: python scripts/config_manager.py --setup")
+        return False
+    
+    # Check if idf.py is in PATH
+    try:
+        # Set IDF_PATH for child processes
+        os.environ['IDF_PATH'] = idf_path
+        subprocess.run(['idf.py', '--version'], capture_output=True, check=True)
+        return True
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        print("ERROR: idf.py command not found.")
+        print("Please make sure ESP-IDF environment is properly sourced.")
+        print(f"IDF_PATH is set to: {idf_path}")
+        print("Try running: source $IDF_PATH/export.sh")
+        return False
+
+def build_project(project_path, target, clean, setup_if_needed=True):
+    """Build the ESP32 project."""
+    # Load configuration for default target
+    config = config_manager.load_config()
+    
+    # Use default target if not specified
+    if not target:
+        target = config.get('default_target', 'esp32')
+        print(f"Using default target: {target}")
+    
+    # Determine project directory
+    if not project_path:
+        project_path = os.getcwd()
+    
+    if not os.path.exists(project_path):
+        print(f"ERROR: Project path does not exist: {project_path}")
+        return False
+    
+    # Check if it's an ESP-IDF project
+    cmake_file = os.path.join(project_path, "CMakeLists.txt")
+    if not os.path.exists(cmake_file):
+        print(f"ERROR: Not an ESP-IDF project (CMakeLists.txt not found): {project_path}")
+        return False
+    
+    print(f"Building ESP32 project at {project_path}")
+    if target:
+        print(f"  Target: {target}")
+    
+    # Change to project directory
+    original_dir = os.getcwd()
+    os.chdir(project_path)
+    
+    try:
+        
+        # Clean build if requested
+        if clean:
+            print("  Cleaning build...")
+            result = subprocess.run(['idf.py', 'fullclean'], capture_output=True, text=True)
+            if result.returncode != 0:
+                print(f"  Clean failed: {result.stderr}")
+                return False
+        
+        # Set target if specified
+        if target:
+            print(f"  Setting target to {target}...")
+            result = subprocess.run(['idf.py', 'set-target', target], capture_output=True, text=True)
+            if result.returncode != 0:
+                print(f"  Set target failed: {result.stderr}")
+                return False
+        
+        # Build the project
+        print("  Building project...")
+        result = subprocess.run(['idf.py', 'build'], capture_output=True, text=True)
+        
+        if result.returncode == 0:
+            print("\n✅ Build successful!")
+            
+            # Show build summary
+            build_dir = os.path.join(project_path, "build")
+            if os.path.exists(build_dir):
+                bin_dir = os.path.join(build_dir, "bin")
+                if os.path.exists(bin_dir):
+                    print(f"\nGenerated binaries in {bin_dir}:")
+                    for f in os.listdir(bin_dir):
+                        if f.endswith('.bin') or f.endswith('.elf'):
+                            print(f"  - {f}")
+            
+            # Show flash instructions
+            print("\nTo flash the firmware:")
+            print(f"  idf.py -p /dev/ttyUSB0 flash")
+            print(f"  or: idf.py flash monitor")
+            
+            return True
+        else:
+            print(f"\n❌ Build failed!")
+            print(f"Error output:\n{result.stderr}")
+            return False
+            
+    except Exception as e:
+        print(f"ERROR: Build failed with exception: {e}")
+        return False
+    finally:
+        os.chdir(original_dir)
+
+def main():
+    parser = argparse.ArgumentParser(description="Build an ESP32 project using ESP-IDF")
+    parser.add_argument("--path", help="Path to project directory (default: current directory)")
+    parser.add_argument("--target", help="Target chip (esp32, esp32s2, esp32s3, esp32c3, etc.). If not specified, uses default from config.")
+    parser.add_argument("--clean", action="store_true", help="Clean build before compiling")
+    parser.add_argument("--setup", action="store_true", help="Run setup wizard before building")
+    
+    args = parser.parse_args()
+    
+    # Run setup wizard if requested
+    setup_if_needed = True
+    if args.setup:
+        config = config_manager.interactive_setup()
+        if not config:
+            print("Setup cancelled.")
+            sys.exit(1)
+        setup_if_needed = False  # Already setup
+    
+    # Check ESP-IDF environment
+    if not check_esp_idf(setup_if_needed):
+        sys.exit(1)
+    
+    success = build_project(args.path, args.target, args.clean, setup_if_needed)
+    sys.exit(0 if success else 1)
+
+if __name__ == "__main__":
+    main()
