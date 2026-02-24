@@ -1,0 +1,37 @@
+{
+  "system": {
+    "name": "Mac",
+    "hostname": "Mac.lan",
+    "os": "darwin",
+    "arch": "arm64",
+    "user": "robot"
+  },
+  "opencode": {
+    "version": "1.2.10",
+    "skills_path": "~/.opencode/skills"
+  },
+  "skills": [
+    {
+      "name": "esp32-developer",
+      "version": "1.0.0",
+      "source": "local",
+      "auto_update": true,
+      "installed_at": "2026-02-24T04:13:46Z",
+      "updated_at": "2026-02-24T04:13:46Z"
+    },
+    {
+      "name": "skill-creator",
+      "version": "1.0.0",
+      "source": "local",
+      "auto_update": true,
+      "installed_at": "2026-02-24T04:13:46Z",
+      "updated_at": "2026-02-24T04:13:46Z"
+    }
+  ],
+  "excluded_skills": [],
+  "sync_config": {
+    "auto_sync": true,
+    "sync_interval_hours": 24,
+    "check_updates": true
+  }
+}
