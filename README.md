@@ -1,270 +1,223 @@
-# OpenCode Skills Registry
+# OpenCode Skills
 
-多系统 OpenCode skills 同步管理仓库。
+Git 托管的 OpenCode skills 仓库。
 
-## 📦 两种管理方式
+## 🚀 快速开始
 
-本仓库提供 **两种** 管理工具，满足不同需求：
-
-### 1. 🚀 opm (OpenCode Package Manager) - 推荐
-**Git Native** 方式，直接管理 skills，简单透明。
-
-适合：
-- ✅ 喜欢直接控制 Git 的用户
-- ✅ 需要清晰变更历史的用户
-- ✅ 熟悉 Git 工作流的用户
-
-```bash
-# 编辑 skill
-vim ~/.opencode/skills/esp32-developer/SKILL.md
-
-# 查看变更
-opm status
-opm diff
-
-# 提交
-opm add esp32-developer
-opm commit "feat: add new feature"
-opm push
-```
-
-### 2. 🔧 ocm (OpenCode Manager) - 传统
-**双向同步** 方式，自动处理 manifest 和多系统同步。
-
-适合：
-- 多系统环境（Mac + Linux + Server）
-- 需要自动同步的用户
-- 旧用户保持兼容
-
----
-
-## 🚀 快速开始 (opm 方式)
-
-### 1. 初始化
+### 1. 克隆仓库
 
 ```bash
 git clone git@github.com:xingshizhai/opencode-skills.git ~/projects/opencode-skills
-
-# 创建软链接（让 OpenCode 使用 git 仓库中的 skills）
-rm -rf ~/.opencode/skills
-ln -s ~/projects/opencode-skills/skills ~/.opencode/skills
-
-# 添加到 PATH
-echo 'export PATH="$HOME/opencode-skills/tools:$PATH"' >> ~/.zshrc
-source ~/.zshrc
 ```
 
-### 2. 日常使用
+### 2. 链接到 OpenCode
 
 ```bash
-# 查看状态
-opm status
+# 备份原有 skills（如果有）
+mv ~/.opencode/skills ~/.opencode/skills.backup.$(date +%Y%m%d) 2>/dev/null || true
 
-# 编辑 skill（直接在 ~/.opencode/skills/ 编辑）
-vim ~/.opencode/skills/esp32-developer/SKILL.md
+# 创建软链接
+ln -s ~/projects/opencode-skills/skills ~/.opencode/skills
+```
+
+### 3. 验证
+
+```bash
+ls ~/.opencode/skills/
+# 应该看到: esp32-developer, skill-creator, ...
+```
+
+---
+
+## 🔄 日常使用
+
+### 修改 skill
+
+```bash
+# 直接编辑
+vim ~/projects/opencode-skills/skills/esp32-developer/SKILL.md
 
 # 查看变更
-opm diff
+cd ~/projects/opencode-skills
+git status
+git diff
 
-# 提交变更
-opm add esp32-developer
-opm commit "feat: update skill"
-opm push
-
-# 获取最新变更
-opm pull
+# 提交
+git add skills/esp32-developer/
+git commit -m "feat: update esp32-developer"
+git push
 ```
 
----
-
-## 📋 opm 命令参考
-
-| 命令 | 说明 | 示例 |
-|-----|------|------|
-| `opm status` | 查看哪些 skills 有变更 | `opm status` |
-| `opm diff` | 查看具体变更内容 | `opm diff` |
-| `opm add <skill>` | 暂存指定 skill 的变更 | `opm add esp32-developer` |
-| `opm commit <msg>` | 提交变更 | `opm commit "update skill"` |
-| `opm push` | 推送到远程仓库 | `opm push` |
-| `opm pull` | 拉取最新变更 | `opm pull` |
-| `opm log [n]` | 查看提交历史 | `opm log 10` |
-| `opm list` | 列出所有 skills | `opm list` |
-| `opm sync` | 快速同步（pull + status）| `opm sync` |
-
----
-
-## 🔧 ocm (传统方式)
-
-如果你需要多系统自动同步功能，使用 `ocm`：
-
-### 安装
+### 获取最新变更（另一台机器）
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/xingshizhai/opencode-skills/main/tools/install.sh | bash
+cd ~/projects/opencode-skills
+git pull
 ```
 
-### 常用命令
+---
 
-| 命令 | 说明 |
-|-----|------|
-| `ocm init` | 初始化当前系统的 manifest |
-| `ocm sync` | 双向同步 skills |
-| `ocm status` | 查看状态 |
+## 🖥️ 多机器工作流程
+
+### 机器 A：添加/修改 skill
+
+```bash
+# 1. 编辑 skill
+vim ~/projects/opencode-skills/skills/my-skill/SKILL.md
+
+# 2. 提交并推送
+cd ~/projects/opencode-skills
+git add .
+git commit -m "feat: add my-skill"
+git push
+```
+
+### 机器 B：获取更新
+
+```bash
+# 1. 进入仓库
+cd ~/projects/opencode-skills
+
+# 2. 拉取更新
+git pull
+
+# 3. 完成！OpenCode 自动使用最新 skills
+```
 
 ---
 
 ## 📁 目录结构
 
 ```
-~/projects/opencode-skills/              # Git 仓库（Registry）
-├── .git/                       # Git 版本控制
-├── README.md                   # 本文件
-├── LICENSE
-├── skills/                     # 🔥 所有 skills
-│   ├── esp32-developer/        # ESP32 开发 skill
-│   │   ├── SKILL.md           # Skill 定义（必需）
-│   │   ├── scripts/           # 脚本（可选）
-│   │   ├── references/        # 参考资料（可选）
-│   │   └── assets/            # 资源文件（可选）
-│   └── skill-creator/          # Skill 创建工具
-├── manifests/                  # 各系统配置（ocm 使用）
-│   └── Mac.json               # 系统 manifest
-└── tools/
-    ├── opm                    # 🔥 新的包管理器（推荐）
-    ├── ocm                    # 传统管理器
-    └── install.sh             # 安装脚本
+~/projects/opencode-skills/      # Git 仓库
+├── .git/                        # Git 版本控制
+├── skills/                      # 👈 OpenCode 使用的 skills
+│   ├── esp32-developer/
+│   └── skill-creator/
+└── tools/                       # 辅助工具（可选）
+    └── opm
 
-~/.opencode/                    # OpenCode 主目录
+~/.opencode/
 └── skills -> ~/projects/opencode-skills/skills   # 🔗 软链接
 ```
 
 ---
 
-## 🔄 工作流程对比
-
-### opm 方式（Git Native）
-
-```
-编辑 skill ──→ opm status ──→ opm add ──→ opm commit ──→ opm push
-    ↑                                                      │
-    └────────────────── opm pull ──────────────────────────┘
-```
-
-简单直接，就是标准 Git 工作流。
-
-### ocm 方式（双向同步）
-
-```
-┌─────────────┐      ocm sync      ┌─────────────────┐      ocm sync      ┌─────────────┐
-│   MacBook   │ ─────────────────► │  GitHub Repo    │ ◄───────────────── │   Desktop   │
-│  (新增skill)│                    │  (中央仓库)      │                    │  (获取skill) │
-└─────────────┘                    └─────────────────┘                    └─────────────┘
-```
-
-适合多系统自动同步。
-
----
-
-## 🛠️ 添加新 Skill
-
-使用 `skill-creator` skill：
+## 🆕 新机器初始化（完整步骤）
 
 ```bash
-# 确保 skill-creator 已安装
-cd ~/projects/opencode-skills
+# 1. 确保目录存在
+mkdir -p ~/projects
 
-# 使用创建脚本
-python skills/skill-creator/scripts/init_skill.py my-new-skill --path skills/
-
-# 编辑 SKILL.md
-vim skills/my-new-skill/SKILL.md
-
-# 提交
-opm add my-new-skill
-opm commit "feat: add my-new-skill"
-opm push
-```
-
----
-
-## 🖥️ 多系统同步
-
-### 在新系统上设置
-
-```bash
-# 1. 克隆仓库
+# 2. 克隆仓库
 git clone git@github.com:xingshizhai/opencode-skills.git ~/projects/opencode-skills
 
-# 2. 创建软链接
+# 3. 链接到 OpenCode
 rm -rf ~/.opencode/skills
 ln -s ~/projects/opencode-skills/skills ~/.opencode/skills
 
-# 3. 添加到 PATH
-echo 'export PATH="$HOME/opencode-skills/tools:$PATH"' >> ~/.zshrc
-source ~/.zshrc
-
-# 4. 完成！
-opm list
-```
-
-### 同步变更
-
-```bash
-# 系统 A：推送变更
-opm add my-skill
-opm commit "update"
-opm push
-
-# 系统 B：拉取变更
-opm pull
+# 4. 验证
+ls ~/.opencode/skills/
 ```
 
 ---
 
-## 🐛 故障排查
+## 📝 添加新 skill
 
-### opm 问题
+```bash
+# 1. 创建目录
+mkdir ~/projects/opencode-skills/skills/my-skill
 
-| 问题 | 解决方案 |
-|-----|---------|
-| `opm: command not found` | 检查 PATH：`export PATH="$HOME/opencode-skills/tools:$PATH"` |
-| `Not a git repository` | 运行 `cd ~/projects/opencode-skills && git init` |
-| `Permission denied` | `chmod +x ~/projects/opencode-skills/tools/opm` |
+# 2. 创建 SKILL.md
+cat > ~/projects/opencode-skills/skills/my-skill/SKILL.md << 'EOF'
+---
+name: my-skill
+description: "Description of what this skill does"
+---
 
-### OpenCode 问题
+# My Skill
 
-| 问题 | 解决方案 |
-|-----|---------|
-| Skill 未生效 | 检查软链接：`ls -la ~/.opencode/skills` |
-| 找不到 skill | 确认 skill 目录下有 `SKILL.md` |
+Content here...
+EOF
 
-### Git 问题
-
-| 问题 | 解决方案 |
-|-----|---------|
-| `git pull failed` | 检查 SSH key：`cat ~/.ssh/id_ed25519.pub` |
-| 合并冲突 | 手动解决后 `git add . && git commit` |
+# 3. 提交
+cd ~/projects/opencode-skills
+git add skills/my-skill/
+git commit -m "feat: add my-skill"
+git push
+```
 
 ---
 
-## 🔐 SSH 配置
-
-确保有 GitHub SSH 访问权限：
+## 🔧 SSH 配置（首次设置）
 
 ```bash
-# 生成密钥
+# 1. 生成 SSH key
 ssh-keygen -t ed25519 -C "$(hostname)"
 
-# 复制公钥
+# 2. 复制公钥到剪贴板
 cat ~/.ssh/id_ed25519.pub
-# 添加到 GitHub: Settings > SSH and GPG keys > New SSH key
+# 然后添加到 GitHub: Settings > SSH and GPG keys > New SSH key
 
-# 测试连接
+# 3. 测试连接
 ssh -T git@github.com
+```
+
+---
+
+## ⚡ 快捷命令（可选）
+
+添加到 `~/.zshrc` 或 `~/.bashrc`：
+
+```bash
+# Skills 快捷方式
+alias skills='cd ~/projects/opencode-skills'
+alias sk-status='cd ~/projects/opencode-skills && git status'
+alias sk-pull='cd ~/projects/opencode-skills && git pull'
+alias sk-push='cd ~/projects/opencode-skills && git add . && git commit && git push'
+```
+
+然后使用：
+
+```bash
+skills          # 进入仓库目录
+sk-status       # 查看状态
+sk-pull         # 拉取更新
+sk-push         # 提交并推送（会提示输入 commit message）
+```
+
+---
+
+## ❓ 常见问题
+
+**Q: OpenCode 不识别新 skill？**  
+A: 确保 skill 目录下有 `SKILL.md` 文件，且包含 YAML frontmatter：
+```yaml
+---
+name: skill-name
+description: "description"
+---
+```
+
+**Q: 软链接失效？**  
+A: 重新创建：
+```bash
+rm ~/.opencode/skills
+ln -s ~/projects/opencode-skills/skills ~/.opencode/skills
+```
+
+**Q: 两台机器修改冲突？**  
+A: 正常 git 冲突处理：
+```bash
+git pull                    # 获取远程变更
+# 手动解决冲突文件
+git add .
+git commit -m "merge: resolve conflicts"
+git push
 ```
 
 ---
 
 ## 📄 License
 
-MIT License - 见 LICENSE 文件
+MIT
