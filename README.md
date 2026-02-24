@@ -57,31 +57,63 @@ git pull
 
 ---
 
-## 🖥️ 多机器工作流程
+## 🖥️ 多机器同步
 
-### 机器 A：添加/修改 skill
+### 场景 1：全新机器（首次设置）
+
+如果该机器上还没有配置过 OpenCode skills：
 
 ```bash
-# 1. 编辑 skill
-vim ~/projects/opencode-skills/skills/my-skill/SKILL.md
+# 1. 创建目录并克隆仓库
+mkdir -p ~/projects
+git clone git@github.com:xingshizhai/opencode-skills.git ~/projects/opencode-skills
 
-# 2. 提交并推送
+# 2. 链接到 OpenCode
+ln -s ~/projects/opencode-skills/skills ~/.opencode/skills
+
+# 3. 验证
+ls ~/.opencode/skills/
+```
+
+### 场景 2：已有 skills 的机器
+
+如果该机器已有 skills，想切换到 git 管理：
+
+```bash
+# 1. 备份原有 skills
+mv ~/.opencode/skills ~/.opencode/skills.backup.$(date +%Y%m%d)
+
+# 2. 克隆仓库
+mkdir -p ~/projects
+git clone git@github.com:xingshizhai/opencode-skills.git ~/projects/opencode-skills
+
+# 3. 链接到 OpenCode
+ln -s ~/projects/opencode-skills/skills ~/.opencode/skills
+
+# 4. （可选）合并原有 skills
+# 如果有想保留的 skill，从备份复制到仓库
+# cp -r ~/.opencode/skills.backup.20240224/my-skill ~/projects/opencode-skills/skills/
+# cd ~/projects/opencode-skills && git add . && git commit && git push
+```
+
+### 机器 A：修改并推送
+
+```bash
+# 编辑 skill
+vim ~/projects/opencode-skills/skills/esp32-developer/SKILL.md
+
+# 提交并推送
 cd ~/projects/opencode-skills
 git add .
-git commit -m "feat: add my-skill"
+git commit -m "feat: update skill"
 git push
 ```
 
-### 机器 B：获取更新
+### 机器 B：拉取更新
 
 ```bash
-# 1. 进入仓库
 cd ~/projects/opencode-skills
-
-# 2. 拉取更新
 git pull
-
-# 3. 完成！OpenCode 自动使用最新 skills
 ```
 
 ---
@@ -99,25 +131,6 @@ git pull
 
 ~/.opencode/
 └── skills -> ~/projects/opencode-skills/skills   # 🔗 软链接
-```
-
----
-
-## 🆕 新机器初始化（完整步骤）
-
-```bash
-# 1. 确保目录存在
-mkdir -p ~/projects
-
-# 2. 克隆仓库
-git clone git@github.com:xingshizhai/opencode-skills.git ~/projects/opencode-skills
-
-# 3. 链接到 OpenCode
-rm -rf ~/.opencode/skills
-ln -s ~/projects/opencode-skills/skills ~/.opencode/skills
-
-# 4. 验证
-ls ~/.opencode/skills/
 ```
 
 ---
