@@ -6,7 +6,7 @@
 
 set -e
 
-REPO_DIR="$HOME/opencode-skills"
+REPO_DIR="$HOME/projects/opencode-skills"
 SKILLS_DIR="$HOME/.opencode/skills"
 REPO_URL="git@github.com:xingshizhai/opencode-skills.git"
 

@@ -43,11 +43,11 @@ opm push
 ### 1. 初始化
 
 ```bash
-git clone git@github.com:xingshizhai/opencode-skills.git ~/opencode-skills
+git clone git@github.com:xingshizhai/opencode-skills.git ~/projects/opencode-skills
 
 # 创建软链接（让 OpenCode 使用 git 仓库中的 skills）
 rm -rf ~/.opencode/skills
-ln -s ~/opencode-skills/skills ~/.opencode/skills
+ln -s ~/projects/opencode-skills/skills ~/.opencode/skills
 
 # 添加到 PATH
 echo 'export PATH="$HOME/opencode-skills/tools:$PATH"' >> ~/.zshrc
@@ -116,7 +116,7 @@ curl -fsSL https://raw.githubusercontent.com/xingshizhai/opencode-skills/main/to
 ## 📁 目录结构
 
 ```
-~/opencode-skills/              # Git 仓库（Registry）
+~/projects/opencode-skills/              # Git 仓库（Registry）
 ├── .git/                       # Git 版本控制
 ├── README.md                   # 本文件
 ├── LICENSE
@@ -135,7 +135,7 @@ curl -fsSL https://raw.githubusercontent.com/xingshizhai/opencode-skills/main/to
     └── install.sh             # 安装脚本
 
 ~/.opencode/                    # OpenCode 主目录
-└── skills -> ~/opencode-skills/skills   # 🔗 软链接
+└── skills -> ~/projects/opencode-skills/skills   # 🔗 软链接
 ```
 
 ---
@@ -171,7 +171,7 @@ curl -fsSL https://raw.githubusercontent.com/xingshizhai/opencode-skills/main/to
 
 ```bash
 # 确保 skill-creator 已安装
-cd ~/opencode-skills
+cd ~/projects/opencode-skills
 
 # 使用创建脚本
 python skills/skill-creator/scripts/init_skill.py my-new-skill --path skills/
@@ -193,11 +193,11 @@ opm push
 
 ```bash
 # 1. 克隆仓库
-git clone git@github.com:xingshizhai/opencode-skills.git ~/opencode-skills
+git clone git@github.com:xingshizhai/opencode-skills.git ~/projects/opencode-skills
 
 # 2. 创建软链接
 rm -rf ~/.opencode/skills
-ln -s ~/opencode-skills/skills ~/.opencode/skills
+ln -s ~/projects/opencode-skills/skills ~/.opencode/skills
 
 # 3. 添加到 PATH
 echo 'export PATH="$HOME/opencode-skills/tools:$PATH"' >> ~/.zshrc
@@ -228,8 +228,8 @@ opm pull
 | 问题 | 解决方案 |
 |-----|---------|
 | `opm: command not found` | 检查 PATH：`export PATH="$HOME/opencode-skills/tools:$PATH"` |
-| `Not a git repository` | 运行 `cd ~/opencode-skills && git init` |
-| `Permission denied` | `chmod +x ~/opencode-skills/tools/opm` |
+| `Not a git repository` | 运行 `cd ~/projects/opencode-skills && git init` |
+| `Permission denied` | `chmod +x ~/projects/opencode-skills/tools/opm` |
 
 ### OpenCode 问题
 
