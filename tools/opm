@@ -1,0 +1,262 @@
+#!/bin/bash
+#
+# opm - OpenCode Package Manager
+# Simple CLI tool for managing OpenCode skills with Git
+#
+
+set -e
+
+REPO_DIR="$HOME/opencode-skills"
+SKILLS_DIR="$HOME/.opencode/skills"
+REPO_URL="git@github.com:xingshizhai/opencode-skills.git"
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Help message
+show_help() {
+    cat << 'EOF'
+opm - OpenCode Package Manager
+
+A simple CLI tool for managing OpenCode skills using Git.
+
+USAGE:
+    opm <command> [options]
+
+COMMANDS:
+    status              Show status of skills (git status)
+    diff                Show changes in skills (git diff)
+    add <skill>         Stage changes for a skill (git add)
+    commit <message>    Commit all staged changes (git commit)
+    push                Push commits to remote (git push)
+    pull                Pull latest changes from remote (git pull)
+    log [n]             Show recent commits (default: 5)
+    list                List all installed skills
+    init                Initialize opm (clone repo if needed)
+    sync                Sync skills from remote (pull + status)
+
+EXAMPLES:
+    opm status                    # Check which skills have changes
+    opm diff                      # See what changed
+    opm add esp32-developer       # Stage changes for a skill
+    opm commit "update skill"     # Commit with message
+    opm push                      # Push to GitHub
+    opm pull                      # Get latest changes
+    opm log 10                    # Show last 10 commits
+    opm list                      # Show all skills
+    opm sync                      # Quick sync from remote
+
+DIRECTORY STRUCTURE:
+    ~/opencode-skills/            # Git repository
+    ~/.opencode/skills -> ~/opencode-skills/skills  # Symlink to skills
+
+EOF
+}
+
+# Check if repo exists
+check_repo() {
+    if [ ! -d "$REPO_DIR/.git" ]; then
+        echo -e "${RED}Error: Repository not found at $REPO_DIR${NC}"
+        echo "Run 'opm init' to initialize."
+        exit 1
+    fi
+}
+
+# Initialize opm
+cmd_init() {
+    if [ -d "$REPO_DIR/.git" ]; then
+        echo -e "${GREEN}opm already initialized at $REPO_DIR${NC}"
+        return 0
+    fi
+
+    echo -e "${BLUE}Initializing opm...${NC}"
+    
+    if [ -d "$REPO_DIR" ]; then
+        echo "Directory exists, converting to git repo..."
+        cd "$REPO_DIR"
+        git init
+        git remote add origin "$REPO_URL" 2>/dev/null || true
+        git pull origin main || true
+    else
+        echo "Cloning repository..."
+        git clone "$REPO_URL" "$REPO_DIR"
+    fi
+    
+    # Ensure symlink exists
+    if [ ! -L "$SKILLS_DIR" ]; then
+        rm -rf "$SKILLS_DIR"
+        ln -s "$REPO_DIR/skills" "$SKILLS_DIR"
+        echo -e "${GREEN}Created symlink: $SKILLS_DIR -> $REPO_DIR/skills${NC}"
+    fi
+    
+    echo -e "${GREEN}✓ opm initialized successfully!${NC}"
+    echo "Repository: $REPO_DIR"
+    echo "Skills: $SKILLS_DIR"
+}
+
+# Status command
+cmd_status() {
+    check_repo
+    cd "$REPO_DIR"
+    
+    echo -e "${BLUE}=== Git Status ===${NC}"
+    git status -s
+    
+    echo ""
+    echo -e "${BLUE}=== Installed Skills ===${NC}"
+    ls -1 "$SKILLS_DIR" 2>/dev/null || echo "No skills found"
+}
+
+# Diff command
+cmd_diff() {
+    check_repo
+    cd "$REPO_DIR"
+    git diff "$@"
+}
+
+# Add command
+cmd_add() {
+    check_repo
+    cd "$REPO_DIR"
+    
+    if [ -z "$1" ]; then
+        echo -e "${YELLOW}Usage: opm add <skill-name>${NC}"
+        echo "Example: opm add esp32-developer"
+        exit 1
+    fi
+    
+    SKILL="$1"
+    if [ -d "skills/$SKILL" ]; then
+        git add "skills/$SKILL"
+        echo -e "${GREEN}✓ Staged changes for skill: $SKILL${NC}"
+    else
+        echo -e "${RED}Error: Skill '$SKILL' not found${NC}"
+        exit 1
+    fi
+}
+
+# Commit command
+cmd_commit() {
+    check_repo
+    cd "$REPO_DIR"
+    
+    if [ -z "$1" ]; then
+        echo -e "${YELLOW}Usage: opm commit <message>${NC}"
+        echo "Example: opm commit 'update esp32-developer skill'"
+        exit 1
+    fi
+    
+    git commit -m "$@"
+}
+
+# Push command
+cmd_push() {
+    check_repo
+    cd "$REPO_DIR"
+    
+    echo -e "${BLUE}Pushing to remote...${NC}"
+    git push origin main
+    echo -e "${GREEN}✓ Pushed successfully!${NC}"
+}
+
+# Pull command
+cmd_pull() {
+    check_repo
+    cd "$REPO_DIR"
+    
+    echo -e "${BLUE}Pulling from remote...${NC}"
+    git pull origin main
+    echo -e "${GREEN}✓ Updated!${NC}"
+}
+
+# Log command
+cmd_log() {
+    check_repo
+    cd "$REPO_DIR"
+    
+    N="${1:-5}"
+    git log --oneline -"$N"
+}
+
+# List command
+cmd_list() {
+    check_repo
+    
+    echo -e "${BLUE}Installed Skills:${NC}"
+    for skill in "$SKILLS_DIR"/*/; do
+        if [ -d "$skill" ]; then
+            name=$(basename "$skill")
+            echo "  • $name"
+        fi
+    done
+}
+
+# Sync command
+cmd_sync() {
+    check_repo
+    cd "$REPO_DIR"
+    
+    echo -e "${BLUE}Syncing with remote...${NC}"
+    git pull origin main
+    echo ""
+    
+    # Check for local changes
+    if [ -n "$(git status --porcelain)" ]; then
+        echo -e "${YELLOW}⚠ Local changes detected:${NC}"
+        git status -s
+        echo ""
+        echo "Run 'opm add <skill>' and 'opm commit <message>' to commit changes."
+    else
+        echo -e "${GREEN}✓ In sync with remote${NC}"
+    fi
+}
+
+# Main command dispatcher
+case "${1:-help}" in
+    init)
+        cmd_init
+        ;;
+    status|st)
+        cmd_status
+        ;;
+    diff|d)
+        shift
+        cmd_diff "$@"
+        ;;
+    add|a)
+        shift
+        cmd_add "$@"
+        ;;
+    commit|c)
+        shift
+        cmd_commit "$@"
+        ;;
+    push|p)
+        cmd_push
+        ;;
+    pull|pl)
+        cmd_pull
+        ;;
+    log|l)
+        shift
+        cmd_log "$@"
+        ;;
+    list|ls)
+        cmd_list
+        ;;
+    sync|s)
+        cmd_sync
+        ;;
+    help|--help|-h)
+        show_help
+        ;;
+    *)
+        echo -e "${RED}Unknown command: $1${NC}"
+        echo "Run 'opm help' for usage."
+        exit 1
+        ;;
+esac
