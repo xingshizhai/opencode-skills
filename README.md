@@ -1,303 +1,178 @@
 # OpenCode Skills
 
-Git 托管的 OpenCode skills 仓库。
+Git托管的OpenCode技能仓库，用于跨机器同步和管理OpenCode技能。
 
 ## 快速开始
 
 ### 1. 克隆仓库
 
-**Linux/Mac/Windows (Git Bash/WSL):**
 ```bash
 git clone git@github.com:xingshizhai/opencode-skills.git ~/projects/opencode-skills
 ```
 
-**Windows (CMD/PowerShell):**
+Windows用户可使用Git Bash（推荐）或PowerShell，路径根据实际情况调整。
+
+### 2. 链接到OpenCode
+
+**所有平台（推荐使用Git Bash）：**
+
 ```bash
-git clone git@github.com:xingshizhai/opencode-skills.git %USERPROFILE%\projects\opencode-skills
-```
+# 备份原有skills（如果存在）
+mv ~/.config/opencode/skills ~/.config/opencode/skills.backup.$(date +%Y%m%d) 2>/dev/null || true
 
-> **注意**: Windows 用户推荐使用 Git Bash（随 Git 安装），以支持 `~` 符号和 Unix 风格路径。
-
-### 2. 链接到 OpenCode
-
-**Linux/Mac:**
-```bash
-# 备份原有 skills（如果有）
-mv ~/.opencode/skills ~/.opencode/skills.backup.$(date +%Y%m%d) 2>/dev/null || true
-
-# 创建软链接
-ln -s ~/projects/opencode-skills/skills ~/.opencode/skills
-```
-
-**Windows (Git Bash):**
-```bash
-# 备份原有 skills（如果有）
-mv ~/.opencode/skills ~/.opencode/skills.backup.$(date +%Y%m%d) 2>/dev/null || true
-
-# 使用 Git Worktree
+# 使用Git Worktree链接
 cd ~/projects/opencode-skills
-git worktree add ~/.opencode/skills
+git worktree add ~/.config/opencode/skills
 ```
 
-**Windows (CMD/PowerShell):**
-```bash
-# 备份原有 skills（如果有）
-move %USERPROFILE%\.opencode\skills %USERPROFILE%\.opencode\skills.backup-%date:~0,4%%date:~5,2%%date:~8,2% 2>nul
+**Windows PowerShell：**
 
-# 使用 Git Worktree
-cd %USERPROFILE%\projects\opencode-skills
-git worktree add %USERPROFILE%\.opencode\skills
+```powershell
+# 备份原有skills（如果存在）
+Move-Item $env:USERPROFILE\.config\opencode\skills $env:USERPROFILE\.config\opencode\skills.backup$(Get-Date -Format "yyyyMMdd") -ErrorAction SilentlyContinue
+
+# 使用Git Worktree链接
+cd $env:USERPROFILE\projects\opencode-skills
+git worktree add $env:USERPROFILE\.config\opencode\skills
 ```
 
 ### 3. 验证
 
-**Linux/Mac/Windows (Git Bash):**
 ```bash
-ls ~/.opencode/skills/
-```
-
-**Windows (CMD/PowerShell):**
-```bash
-dir %USERPROFILE%\.opencode\skills
+ls ~/.config/opencode/skills/
 ```
 
 ## 日常使用
 
-### Linux/Mac
+### 编辑和更新技能
+
+**在主仓库目录操作：**
 
 ```bash
-# 编辑 skill
-vim ~/projects/opencode-skills/skills/esp32-developer/SKILL.md
+# 编辑技能文件
+cd ~/projects/opencode-skills
+# 使用你喜欢的编辑器编辑 skills/目录下的文件
 
 # 提交变更
-cd ~/projects/opencode-skills
 git add .
 git commit -m "feat: update skill"
 git push
 
-# 拉取更新
+# 拉取更新（worktree自动同步）
 git pull
 ```
 
-### Windows (Git Bash)
+**Windows注意：** 在Git Bash中`~`映射到`/c/Users/用户名`，但某些系统可能是`/c/User/用户名`。如果路径不匹配，请使用完整路径。
 
-```bash
-# 编辑 skill（在主仓库目录）
-notepad ~/projects/opencode-skills/skills/esp32-developer/SKILL.md
+## 目录结构
 
-# 提交变更
-cd ~/projects/opencode-skills
-git add .
-git commit -m "feat: update skill"
-git push
+```
+~/projects/opencode-skills/      # Git主仓库
+├── skills/                      # 技能目录
+│   ├── esp32-developer/        # ESP32开发技能
+│   ├── skill-creator/          # 技能创建器
+│   └── requirements-manager/    # 依赖管理器
+├── tools/                       # 辅助工具
+└── manifests/                   # 清单文件
 
-# 拉取更新（worktree 自动同步）
-git pull
+~/.config/opencode/skills/       # OpenCode实际使用的技能目录（worktree链接）
 ```
 
-### Windows (CMD/PowerShell)
+## 添加新技能
 
 ```bash
-# 编辑 skill（在主仓库目录）
-notepad %USERPROFILE%\projects\opencode-skills\skills\esp32-developer\SKILL.md
+# 在主仓库创建技能目录
+mkdir ~/projects/opencode-skills/skills/your-skill-name
 
-# 提交变更
-cd %USERPROFILE%\projects\opencode-skills
-git add .
-git commit -m "feat: update skill"
+# 创建SKILL.md文件（必须包含YAML frontmatter）
+cat > ~/projects/opencode-skills/skills/your-skill-name/SKILL.md << 'EOF'
+---
+name: your-skill-name
+description: "技能描述"
+---
+
+# 技能名称
+
+技能内容...
+EOF
+
+# 提交并推送
+cd ~/projects/opencode-skills
+git add skills/your-skill-name/
+git commit -m "feat: add your-skill-name"
 git push
-
-# 拉取更新（worktree 自动同步）
-git pull
 ```
 
 ## 多机器同步
 
-### 场景1：全新机器
+### 全新机器
 
-**Linux/Mac:**
 ```bash
+# 克隆仓库
 git clone git@github.com:xingshizhai/opencode-skills.git ~/projects/opencode-skills
-ln -s ~/projects/opencode-skills/skills ~/.opencode/skills
+
+# 链接到OpenCode
+cd ~/projects/opencode-skills
+git worktree add ~/.config/opencode/skills
 ```
 
-**Windows (Git Bash):**
+### 已有技能迁移
+
 ```bash
+# 备份原有技能
+mv ~/.config/opencode/skills ~/.config/opencode/skills.backup.$(date +%Y%m%d)
+
+# 克隆并链接
 git clone git@github.com:xingshizhai/opencode-skills.git ~/projects/opencode-skills
 cd ~/projects/opencode-skills
-git worktree add ~/.opencode/skills
-```
+git worktree add ~/.config/opencode/skills
 
-**Windows (CMD/PowerShell):**
-```bash
-git clone git@github.com:xingshizhai/opencode-skills.git %USERPROFILE%\projects\opencode-skills
-cd %USERPROFILE%\projects\opencode-skills
-git worktree add %USERPROFILE%\.opencode\skills
-```
-
-### 场景2：已有 skills
-
-**Linux/Mac:**
-```bash
-# 备份并替换
-mv ~/.opencode/skills ~/.opencode/skills.backup.$(date +%Y%m%d)
-git clone git@github.com:xingshizhai/opencode-skills.git ~/projects/opencode-skills
-ln -s ~/projects/opencode-skills/skills ~/.opencode/skills
-
-# 合并原有 skill（可选）
-cp -r ~/.opencode/skills.backup.20260224/my-skill ~/projects/opencode-skills/skills/
-cd ~/projects/opencode-skills
+# 合并原有自定义技能（可选）
+cp -r ~/.config/opencode/skills.backup.*/custom-skill ~/projects/opencode-skills/skills/
 git add . && git commit && git push
-```
-
-**Windows (Git Bash):**
-```bash
-# 备份并替换
-mv ~/.opencode/skills ~/.opencode/skills.backup.$(date +%Y%m%d)
-git clone git@github.com:xingshizhai/opencode-skills.git ~/projects/opencode-skills
-cd ~/projects/opencode-skills
-git worktree add ~/.opencode/skills
-
-# 合并原有 skill（可选）
-cp -r ~/.opencode/skills.backup.20260224/my-skill ~/.opencode/skills/
-cd ~/projects/opencode-skills
-git add . && git commit && git push
-```
-
-**Windows (CMD/PowerShell):**
-```bash
-# 备份并替换
-move %USERPROFILE%\.opencode\skills %USERPROFILE%\.opencode\skills.backup-%date:~0,4%%date:~5,2%%date:~8,2%
-git clone git@github.com:xingshizhai/opencode-skills.git %USERPROFILE%\projects\opencode-skills
-cd %USERPROFILE%\projects\opencode-skills
-git worktree add %USERPROFILE%\.opencode\skills
-
-# 合并原有 skill（可选）
-xcopy /E /I /Y %USERPROFILE%\.opencode\skills.backup.20260224\my-skill %USERPROFILE%\.opencode\skills\my-skill
-cd %USERPROFILE%\projects\opencode-skills
-git add . && git commit && git push
-```
-
-## 目录结构
-
-**Linux/Mac/Windows (Git Bash):**
-```
-~/projects/opencode-skills/      # Git 仓库
-├── skills/                      # OpenCode 使用的 skills
-│   ├── esp32-developer/
-│   ├── skill-creator/
-│   └── requirements-manager/
-└── tools/                       # 辅助工具
-
-~/.opencode/
-└── skills/                       # 链接到仓库 skills 目录
-```
-
-**Windows (CMD/PowerShell):**
-```
-C:\Users\<username>\projects\opencode-skills\      # Git 仓库
-├── skills\                                      # OpenCode 使用的 skills
-│   ├── esp32-developer\
-│   ├── skill-creator\
-│   └── requirements-manager\
-└── tools\                                       # 辅助工具
-
-C:\Users\<username>\.opencode\
-└── skills\                                      # 链接到仓库 skills 目录
-```
-
-## 添加新 skill
-
-**Linux/Mac/Windows (Git Bash):**
-```bash
-mkdir ~/projects/opencode-skills/skills/my-skill
-cat > ~/projects/opencode-skills/skills/my-skill/SKILL.md << 'EOF'
----
-name: my-skill
-description: "Description of what this skill does"
----
-
-# My Skill
-
-Content here...
-EOF
-
-cd ~/projects/opencode-skills
-git add skills/my-skill/
-git commit -m "feat: add my-skill"
-git push
-```
-
-**Windows (CMD/PowerShell):**
-```bash
-mkdir %USERPROFILE%\projects\opencode-skills\skills\my-skill
-(
-echo ---
-echo name: my-skill
-echo description: "Description of what this skill does"
-echo ---
-echo.
-echo # My Skill
-echo.
-echo Content here...
-) > %USERPROFILE%\projects\opencode-skills\skills\my-skill\SKILL.md
-
-cd %USERPROFILE%\projects\opencode-skills
-git add skills/my-skill/
-git commit -m "feat: add my-skill"
-git push
 ```
 
 ## 常见问题
 
-**Q: OpenCode 不识别新 skill？**
-A: 确保包含 SKILL.md 和 YAML frontmatter：
+**Q: Windows上路径错误，OpenCode找不到技能？**
+A: Windows系统可能存在`/c/User`和`/c/Users`路径差异。检查：
+1. 使用`git worktree list`查看现有worktree路径
+2. 确保worktree创建在`~/.config/opencode/skills`（对应`/c/Users/用户名/.config/opencode/skills`）
+3. 如果路径不正确，删除并重新创建worktree：
+```bash
+cd ~/projects/opencode-skills
+git worktree remove ~/.config/opencode/skills --force
+git worktree add ~/.config/opencode/skills
+```
+
+**Q: OpenCode不识别新技能？**
+A: 确保SKILL.md文件包含正确的YAML frontmatter：
 ```yaml
 ---
 name: skill-name
-description: "description"
+description: "技能描述"
 ---
 ```
 
-**Q: 软链接失效？**（Linux/Mac）
-A: 重新创建：
-```bash
-rm ~/.opencode/skills
-ln -s ~/projects/opencode-skills/skills ~/.opencode/skills
-```
+**Q: Windows上路径错误？**
+A: 检查OpenCode实际使用的配置目录。默认在`%USERPROFILE%\.config\opencode\`，使用`git worktree list`查看现有worktree路径。
 
-**Q: Windows 上无法创建软链接？**
-A: 使用 Git Worktree：
-```bash
-# Git Bash
-cd ~/projects/opencode-skills
-git worktree add ~/.opencode/skills
-
-# CMD/PowerShell
-cd %USERPROFILE%\projects\opencode-skills
-git worktree add %USERPROFILE%\.opencode\skills
-```
-
-**Q: Windows 上如何更新？**
-A: 在主仓库目录操作，worktree 自动同步：
-```bash
-# Git Bash
-cd ~/projects/opencode-skills
-git pull
-
-# CMD/PowerShell
-cd %USERPROFILE%\projects\opencode-skills
-git pull
-```
-
-**Q: Git 冲突？**
-A: 标准冲突处理：
+**Q: Git冲突如何处理？**
+A: 在主仓库目录解决冲突：
 ```bash
 git pull
-# 手动解决冲突
+# 手动解决冲突后
 git add .
 git commit -m "merge: resolve conflicts"
 git push
+```
+
+**Q: Worktree已存在怎么办？**
+A: 删除现有worktree并重新创建：
+```bash
+cd ~/projects/opencode-skills
+git worktree remove ~/.config/opencode/skills --force
+git worktree add ~/.config/opencode/skills
 ```
 
 ---
