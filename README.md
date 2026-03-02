@@ -22,7 +22,7 @@ mv ~/.config/opencode/skills ~/.config/opencode/skills.backup.$(date +%Y%m%d) 2>
 
 # 使用Git Worktree链接
 cd ~/projects/opencode-skills
-git worktree add ~/.config/opencode/skills
+git worktree add -b skills-develop ~/.config/opencode/skills develop && cd ~/.config/opencode/skills && git branch -u origin/develop
 ```
 
 **Windows PowerShell：**
@@ -33,7 +33,7 @@ Move-Item $env:USERPROFILE\.config\opencode\skills $env:USERPROFILE\.config\open
 
 # 使用Git Worktree链接
 cd $env:USERPROFILE\projects\opencode-skills
-git worktree add $env:USERPROFILE\.config\opencode\skills
+git worktree add -b skills-develop $env:USERPROFILE\.config\opencode\skills develop; cd $env:USERPROFILE\.config\opencode\skills; git branch -u origin/develop
 ```
 
 ### 3. 验证
@@ -58,8 +58,10 @@ git add .
 git commit -m "feat: update skill"
 git push
 
-# 拉取更新（worktree自动同步）
+# 拉取更新
 git pull
+# 同步到OpenCode技能目录
+cd ~/.config/opencode/skills && git pull
 ```
 
 **Windows注意：** 在Git Bash中`~`映射到`/c/Users/用户名`，但某些系统可能是`/c/User/用户名`。如果路径不匹配，请使用完整路径。
@@ -113,7 +115,7 @@ git clone git@github.com:xingshizhai/opencode-skills.git ~/projects/opencode-ski
 
 # 链接到OpenCode
 cd ~/projects/opencode-skills
-git worktree add ~/.config/opencode/skills
+git worktree add -b skills-develop ~/.config/opencode/skills develop && cd ~/.config/opencode/skills && git branch -u origin/develop
 ```
 
 ### 已有技能迁移
@@ -125,7 +127,7 @@ mv ~/.config/opencode/skills ~/.config/opencode/skills.backup.$(date +%Y%m%d)
 # 克隆并链接
 git clone git@github.com:xingshizhai/opencode-skills.git ~/projects/opencode-skills
 cd ~/projects/opencode-skills
-git worktree add ~/.config/opencode/skills
+git worktree add -b skills-develop ~/.config/opencode/skills develop && cd ~/.config/opencode/skills && git branch -u origin/develop
 
 # 合并原有自定义技能（可选）
 cp -r ~/.config/opencode/skills.backup.*/custom-skill ~/projects/opencode-skills/skills/
